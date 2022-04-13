@@ -7,29 +7,19 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
 
     var itemArray = [Item]()
-    
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+
     
     let dataFilePath = FileManager.default.urls(for: .documentDirectory,
                                                 in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let newItem = Item()
-        newItem.title = "taha"
-        itemArray.append(newItem)
-        
-        let newItem2 = Item()
-        newItem2.title = "jadid"
-        itemArray.append(newItem2)
-        
-        let newItem3 = Item()
-        newItem3.title = "massawi"
-        itemArray.append(newItem3)
 
         loadItems()
     }
@@ -77,8 +67,10 @@ class TodoListViewController: UITableViewController {
         
         let action = UIAlertAction(title: "Add Item", style: .default){ (action) in
             
-            let newItem = Item()
+            
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             
             // what wil happen once the user clicks on the add
             self.itemArray.append(newItem)
@@ -104,27 +96,24 @@ class TodoListViewController: UITableViewController {
     // MARK - Model Manupaltion Methods
     
     func saveItems(){
-        let encoder = PropertyListEncoder()
         
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to : dataFilePath!)
+            try context.save()
         } catch {
-            print("errror encoding item array")
+            print("Error saving : \(error)")
         }
         
     }
+
     
     func loadItems(){
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error not receiving data")
-            }
+
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        do {
+            itemArray = try context.fetch(request)
+        } catch {
+            print("Erro in fetchind : \(error)")
         }
-        
     }
     
 }
